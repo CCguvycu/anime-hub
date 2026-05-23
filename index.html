@@ -3,127 +3,135 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⟐ AnimeHub — Ultimate Directory</title>
+<title>⟐ AnimeHub</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header class="header">
-  <div class="header-inner">
-    <div class="logo">
-      <span class="logo-glyph">⟐</span>
-      <div class="logo-text">
-        <span class="logo-main">ANIMEHUB</span>
-        <span class="logo-sub">ULTIMATE DIRECTORY</span>
-      </div>
-    </div>
-    <div class="search-wrap">
-      <input type="text" id="searchInput" placeholder="Search 600+ anime sites..." autocomplete="off">
-      <span class="search-ico">◈</span>
-    </div>
-    <div class="header-right">
-      <span class="site-counter"><span id="showCount">0</span> / <span id="totalCount">0</span> sites</span>
-      <button id="favBtn" class="hbtn" title="Show favorites">★ Favs <span id="favCount">0</span></button>
-      <button id="gridBtn" class="hbtn active" title="Grid view">⊞</button>
-      <button id="listBtn" class="hbtn" title="List view">☰</button>
-    </div>
+<header class="hdr">
+  <div class="hdr-logo">
+    <span class="hdr-glyph">⟐</span>
+    <span class="hdr-name">ANIMEHUB</span>
+  </div>
+  <div class="hdr-search">
+    <span class="hdr-search-ico">◈</span>
+    <input id="searchInput" type="text" placeholder="Search sites…" autocomplete="off">
+  </div>
+  <div class="hdr-right">
+    <span id="countBadge" class="hdr-count"></span>
+    <button id="sbToggle" class="hdr-btn" title="Toggle sidebar">☰</button>
   </div>
 </header>
 
-<div class="layout">
+<div class="workspace">
 
-  <nav class="sidebar">
-    <div class="filter-group">
-      <div class="filter-label">◇ CATEGORY</div>
-      <button class="fbtn active" data-cat="all">All Sites</button>
-      <button class="fbtn" data-cat="streaming">▸ Streaming</button>
-      <button class="fbtn" data-cat="premium">▸ Premium</button>
-      <button class="fbtn" data-cat="dubbed">▸ Dubbed</button>
-      <button class="fbtn" data-cat="manga">▸ Manga</button>
-      <button class="fbtn" data-cat="manhwa">▸ Manhwa</button>
-      <button class="fbtn" data-cat="downloads">▸ Downloads</button>
-      <button class="fbtn" data-cat="info">▸ Info / DB</button>
-      <button class="fbtn" data-cat="news">▸ News</button>
-      <button class="fbtn" data-cat="schedule">▸ Schedule</button>
-      <button class="fbtn" data-cat="community">▸ Community</button>
-      <button class="fbtn" data-cat="learning">▸ Learning</button>
-      <button class="fbtn" data-cat="music">▸ Music / OST</button>
-      <button class="fbtn" data-cat="store">▸ Store / Merch</button>
-    </div>
+  <!-- ── LEFT: browser sidebar ───────────────────── -->
+  <aside id="sidebar" class="sidebar">
 
-    <div class="filter-group">
-      <div class="filter-label">◇ LANGUAGE</div>
-      <button class="lbtn active" data-lang="all">All</button>
-      <button class="lbtn" data-lang="EN">EN</button>
-      <button class="lbtn" data-lang="JP">JP</button>
-      <button class="lbtn" data-lang="ES">ES</button>
-      <button class="lbtn" data-lang="FR">FR</button>
-      <button class="lbtn" data-lang="DE">DE</button>
-      <button class="lbtn" data-lang="PT">PT</button>
-      <button class="lbtn" data-lang="IT">IT</button>
-      <button class="lbtn" data-lang="RU">RU</button>
-      <button class="lbtn" data-lang="AR">AR</button>
-    </div>
-
-    <div class="filter-group">
-      <div class="filter-label">◇ SORT</div>
-      <select id="sortSel" class="sort-sel">
-        <option value="name">Name A–Z</option>
-        <option value="cat">Category</option>
-        <option value="lang">Language</option>
-      </select>
-    </div>
-
-    <div class="sidebar-stats">
-      <div class="ss-row"><span>Streaming</span><span id="sCnt">0</span></div>
-      <div class="ss-row"><span>Manga</span><span id="mCnt">0</span></div>
-      <div class="ss-row"><span>Info/DB</span><span id="iCnt">0</span></div>
-      <div class="ss-row"><span>Other</span><span id="oCnt">0</span></div>
-    </div>
-  </nav>
-
-  <main class="main">
-    <div id="grid" class="site-grid"></div>
-    <div id="empty" class="empty hidden">
-      <div class="empty-icon">◈</div>
-      <div>No sites match your search.</div>
-    </div>
-  </main>
-
-</div>
-
-<!-- Launch Panel -->
-<div id="panel" class="panel hidden">
-  <div class="panel-bar">
-    <div class="panel-info">
-      <img id="pIcon" src="" alt="" class="p-icon">
-      <div class="p-meta">
-        <div id="pName" class="p-name"></div>
-        <a id="pUrl" href="#" target="_blank" rel="noopener" class="p-url"></a>
+    <div class="sb-top">
+      <div class="sb-label">◇ CATEGORY</div>
+      <div class="cat-list" id="catList">
+        <button class="cat-btn active" data-cat="all">All</button>
+        <button class="cat-btn" data-cat="streaming">Streaming</button>
+        <button class="cat-btn" data-cat="premium">Premium</button>
+        <button class="cat-btn" data-cat="dubbed">Dubbed</button>
+        <button class="cat-btn" data-cat="manga">Manga</button>
+        <button class="cat-btn" data-cat="manhwa">Manhwa</button>
+        <button class="cat-btn" data-cat="downloads">Downloads</button>
+        <button class="cat-btn" data-cat="info">Info / DB</button>
+        <button class="cat-btn" data-cat="news">News</button>
+        <button class="cat-btn" data-cat="schedule">Schedule</button>
+        <button class="cat-btn" data-cat="community">Community</button>
+        <button class="cat-btn" data-cat="learning">Learning</button>
+        <button class="cat-btn" data-cat="music">Music</button>
+        <button class="cat-btn" data-cat="store">Store</button>
       </div>
-      <div id="pTags" class="p-tags"></div>
+
+      <div class="sb-label" style="margin-top:8px">◇ LANGUAGE</div>
+      <div class="lang-row">
+        <button class="lbtn active" data-lang="all">ALL</button>
+        <button class="lbtn" data-lang="EN">EN</button>
+        <button class="lbtn" data-lang="JP">JP</button>
+        <button class="lbtn" data-lang="ES">ES</button>
+        <button class="lbtn" data-lang="FR">FR</button>
+        <button class="lbtn" data-lang="DE">DE</button>
+        <button class="lbtn" data-lang="PT">PT</button>
+        <button class="lbtn" data-lang="RU">RU</button>
+      </div>
+
+      <div class="sb-tools">
+        <button id="favFilterBtn" class="tool-btn">★ Favs <span id="favCount">0</span></button>
+        <select id="sortSel" class="sort-sel">
+          <option value="name">A–Z</option>
+          <option value="cat">Category</option>
+          <option value="lang">Language</option>
+        </select>
+      </div>
     </div>
-    <div class="panel-btns">
-      <button id="pFav" class="pbtn">★ Fav</button>
-      <a id="pOpen" href="#" target="_blank" rel="noopener" class="pbtn pbtn-go">⊞ Open in Tab</a>
-      <button id="pClose" class="pbtn pbtn-x">✕</button>
+
+    <div class="sb-list-hdr">
+      <span id="listCount" class="list-count"></span>
     </div>
-  </div>
-  <div class="panel-body">
-    <div id="pDesc" class="p-desc"></div>
-    <div class="frame-zone">
-      <div id="frameMsg" class="frame-msg">
+
+    <div id="siteList" class="sb-list"></div>
+
+  </aside>
+
+  <div id="resizeHandle" class="resize-handle" title="Drag to resize"></div>
+
+  <!-- ── RIGHT: viewer ───────────────────────────── -->
+  <div id="viewer" class="viewer">
+
+    <div id="viewerBar" class="viewer-bar hidden">
+      <img id="vbIcon" class="vb-icon" src="" alt="">
+      <div class="vb-meta">
+        <span id="vbName" class="vb-name"></span>
+        <a id="vbUrl" class="vb-url" href="#" target="_blank" rel="noopener noreferrer"></a>
+      </div>
+      <div class="vb-tags" id="vbTags"></div>
+      <div class="vb-actions">
+        <button id="vbRefresh" class="vb-btn" title="Reload">⟳ Reload</button>
+        <a id="vbOpen" class="vb-btn vb-open" href="#" target="_blank" rel="noopener noreferrer">⊞ New Tab</a>
+        <button id="vbFav" class="vb-btn">★ Fav</button>
+        <button id="vbClose" class="vb-btn vb-x" title="Close">✕</button>
+      </div>
+    </div>
+
+    <div id="frameWrap" class="frame-wrap">
+
+      <!-- welcome -->
+      <div id="welcome" class="welcome">
+        <div class="wc-glyph">⟐</div>
+        <div class="wc-title">ANIMEHUB</div>
+        <div class="wc-sub">Select a site from the left panel — it loads here</div>
+        <div class="wc-hint" id="wc-hint"></div>
+        <div class="wc-featured" id="wcFeatured"></div>
+      </div>
+
+      <!-- loading -->
+      <div id="loadOverlay" class="frame-ov hidden">
         <div class="spinner"></div>
-        <span id="frameMsgText">Attempting to load site…</span>
+        <div class="ov-text" id="loadText">Loading…</div>
       </div>
-      <iframe id="siteFrame" src="about:blank" class="site-frame"
+
+      <!-- blocked -->
+      <div id="blockedOv" class="frame-ov hidden">
+        <img id="blIcon" class="bl-icon" src="" alt="">
+        <div id="blName" class="bl-name"></div>
+        <div class="bl-badge">⚠ EMBEDDING BLOCKED</div>
+        <p class="bl-msg">This site uses <code>X-Frame-Options</code> headers to prevent embedding in iframes.<br>This is standard browser security — not an AnimeHub issue.</p>
+        <a id="blOpen" class="bl-btn" href="#" target="_blank" rel="noopener noreferrer">⊞ Open in New Tab →</a>
+        <div id="blUrl" class="bl-url"></div>
+      </div>
+
+      <iframe id="siteFrame" class="site-frame" src="about:blank"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation">
       </iframe>
+
     </div>
   </div>
-</div>
 
-<div id="overlay" class="overlay hidden"></div>
+</div>
 
 <script src="sites.js"></script>
 <script src="app.js"></script>

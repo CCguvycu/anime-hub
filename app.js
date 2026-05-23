@@ -1,45 +1,78 @@
 (() => {
-  // ── State ──────────────────────────────────────
-  let activeCat  = 'all';
-  let activeLang = 'all';
-  let searchQ    = '';
-  let sortBy     = 'name';
-  let listMode   = false;
-  let favOnly    = false;
-  let favs       = new Set(JSON.parse(localStorage.getItem('ah_favs') || '[]'));
-  let currentSite = null;
+  // ── State ──────────────────────────────────────────
+  let activeCat   = 'all';
+  let activeLang  = 'all';
+  let searchQ     = '';
+  let sortBy      = 'name';
+  let favOnly     = false;
+  let activeId    = null;
   let frameTimer  = null;
+  let favs = new Set(JSON.parse(localStorage.getItem('ah_favs') || '[]'));
 
-  // ── Elements ───────────────────────────────────
-  const grid      = document.getElementById('grid');
-  const empty     = document.getElementById('empty');
-  const showCount = document.getElementById('showCount');
-  const totalCount= document.getElementById('totalCount');
-  const favCount  = document.getElementById('favCount');
-  const sCnt      = document.getElementById('sCnt');
-  const mCnt      = document.getElementById('mCnt');
-  const iCnt      = document.getElementById('iCnt');
-  const oCnt      = document.getElementById('oCnt');
-  const panel     = document.getElementById('panel');
-  const overlay   = document.getElementById('overlay');
-  const siteFrame = document.getElementById('siteFrame');
-  const frameMsg  = document.getElementById('frameMsg');
-  const frameMsgText = document.getElementById('frameMsgText');
+  const FEATURED_IDS = [1, 38, 30, 140, 220, 270, 97, 106, 300, 577];
+
+  // ── DOM refs ───────────────────────────────────────
+  const sidebar      = document.getElementById('sidebar');
+  const siteList     = document.getElementById('siteList');
+  const listCount    = document.getElementById('listCount');
+  const countBadge   = document.getElementById('countBadge');
   const searchInput  = document.getElementById('searchInput');
+  const viewer       = document.getElementById('viewer');
+  const viewerBar    = document.getElementById('viewerBar');
+  const vbIcon       = document.getElementById('vbIcon');
+  const vbName       = document.getElementById('vbName');
+  const vbUrl        = document.getElementById('vbUrl');
+  const vbTags       = document.getElementById('vbTags');
+  const vbFav        = document.getElementById('vbFav');
+  const vbOpen       = document.getElementById('vbOpen');
+  const vbClose      = document.getElementById('vbClose');
+  const vbRefresh    = document.getElementById('vbRefresh');
+  const frameWrap    = document.getElementById('frameWrap');
+  const siteFrame    = document.getElementById('siteFrame');
+  const welcome      = document.getElementById('welcome');
+  const loadOverlay  = document.getElementById('loadOverlay');
+  const loadText     = document.getElementById('loadText');
+  const blockedOv    = document.getElementById('blockedOv');
+  const blIcon       = document.getElementById('blIcon');
+  const blName       = document.getElementById('blName');
+  const blOpen       = document.getElementById('blOpen');
+  const blUrl        = document.getElementById('blUrl');
+  const favCount     = document.getElementById('favCount');
+  const wcFeatured   = document.getElementById('wcFeatured');
+  const resizeHandle = document.getElementById('resizeHandle');
 
-  // ── Favicon helper ─────────────────────────────
-  function faviconURL(url) {
-    try {
-      const domain = new URL(url).hostname;
-      return `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
-    } catch { return ''; }
+  // ── Helpers ────────────────────────────────────────
+  function favicon(url) {
+    try { return `https://www.google.com/s2/favicons?sz=64&domain=${new URL(url).hostname}`; }
+    catch { return ''; }
   }
 
-  // ── Filter ─────────────────────────────────────
+  function dotClass(cat) {
+    const map = {
+      streaming:'streaming', premium:'premium', manga:'manga', manhwa:'manhwa',
+      dubbed:'dubbed', downloads:'downloads', info:'info', news:'news',
+      schedule:'schedule', community:'community', learning:'learning',
+      music:'music', store:'store'
+    };
+    return 'dot-' + (map[cat] || 'default');
+  }
+
+  function catTagStyle(cat) {
+    const cols = {
+      streaming:'#00d4ff', premium:'#ffcc00', manga:'#aa44ff', manhwa:'#ff00aa',
+      dubbed:'#ff7700', downloads:'#ff3355', info:'#4488ff', news:'#00ff88',
+      schedule:'#88ccff', community:'#ff9966', learning:'#66ffcc',
+      music:'#ff66cc', store:'#ccff66'
+    };
+    const c = cols[cat] || '#3d5266';
+    return `style="color:${c};border-color:${c};border:1px solid;font-size:9px;padding:2px 5px;letter-spacing:.5px"`;
+  }
+
+  // ── Filter ─────────────────────────────────────────
   function filtered() {
     let list = SITES.slice();
-    if (favOnly) list = list.filter(s => favs.has(s.id));
-    if (activeCat !== 'all') list = list.filter(s => s.cat === activeCat);
+    if (favOnly)           list = list.filter(s => favs.has(s.id));
+    if (activeCat !== 'all')  list = list.filter(s => s.cat === activeCat);
     if (activeLang !== 'all') list = list.filter(s => s.lang === activeLang);
     if (searchQ) {
       const q = searchQ.toLowerCase();
@@ -47,10 +80,9 @@
         s.name.toLowerCase().includes(q) ||
         s.desc.toLowerCase().includes(q) ||
         s.url.toLowerCase().includes(q) ||
-        s.cat.toLowerCase().includes(q)
+        s.cat.includes(q)
       );
     }
-    // sort
     list.sort((a, b) => {
       if (sortBy === 'cat')  return a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name);
       if (sortBy === 'lang') return a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
@@ -59,204 +91,209 @@
     return list;
   }
 
-  // ── Render ─────────────────────────────────────
+  // ── Render site list ───────────────────────────────
   function render() {
     const list = filtered();
-    showCount.textContent = list.length;
+    listCount.textContent = `${list.length} site${list.length !== 1 ? 's' : ''}`;
+    countBadge.textContent = `${list.length} / ${SITES.length}`;
+    favCount.textContent = favs.size;
 
-    if (list.length === 0) {
-      grid.innerHTML = '';
-      empty.classList.remove('hidden');
-    } else {
-      empty.classList.add('hidden');
-      grid.innerHTML = list.map(site => {
-        const faved = favs.has(site.id);
-        const icon  = faviconURL(site.url);
-        return `
-<div class="card${faved ? ' faved' : ''}" data-id="${site.id}" role="button" tabindex="0">
-  <button class="fav-star${faved ? ' on' : ''}" data-fav="${site.id}" title="Favourite" aria-label="Favourite ${site.name}">★</button>
-  <div class="card-top">
-    <img class="card-icon" src="${icon}" alt="" loading="lazy"
-      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-    <div class="card-icon-fallback" style="display:none">⟐</div>
-    <div class="card-title">${site.name}</div>
-  </div>
-  <div class="card-desc">${site.desc}</div>
-  <div class="card-footer">
-    <span class="tag tag-${site.cat}">${site.cat}</span>
-    <span class="lang-tag">${site.lang}</span>
-  </div>
-</div>`;
-      }).join('');
+    if (!list.length) {
+      siteList.innerHTML = '<div style="padding:20px 10px;color:var(--text3);font-size:11px;text-align:center">No sites found</div>';
+      return;
     }
 
-    // sidebar stats
-    const all = SITES;
-    sCnt.textContent = all.filter(s => s.cat === 'streaming' || s.cat === 'dubbed' || s.cat === 'premium').length;
-    mCnt.textContent = all.filter(s => s.cat === 'manga' || s.cat === 'manhwa').length;
-    iCnt.textContent = all.filter(s => s.cat === 'info').length;
-    oCnt.textContent = all.filter(s => !['streaming','dubbed','premium','manga','manhwa','info'].includes(s.cat)).length;
-    favCount.textContent = favs.size;
+    siteList.innerHTML = list.map(site => {
+      const faved = favs.has(site.id);
+      const ico   = favicon(site.url);
+      const active = site.id === activeId ? ' active' : '';
+      return `
+<div class="site-item${active}" data-id="${site.id}" tabindex="0" role="button" aria-label="${site.name}">
+  <img class="si-ico" src="${ico}" alt="" loading="lazy"
+    onerror="this.style.visibility='hidden'">
+  <span class="si-name">${site.name}</span>
+  <span class="si-dot ${dotClass(site.cat)}"></span>
+  <button class="si-fav${faved ? ' on' : ''}" data-fav="${site.id}" aria-label="Favourite">★</button>
+</div>`;
+    }).join('');
   }
 
-  // ── Open panel ─────────────────────────────────
-  function openPanel(site) {
-    currentSite = site;
-    document.getElementById('pName').textContent = site.name;
-    const urlEl = document.getElementById('pUrl');
-    urlEl.textContent = site.url;
-    urlEl.href = site.url;
-    document.getElementById('pDesc').textContent = site.desc;
-    document.getElementById('pOpen').href = site.url;
-    document.getElementById('pIcon').src = faviconURL(site.url);
+  // ── Load site in viewer ────────────────────────────
+  function loadSite(site) {
+    activeId = site.id;
 
-    // tags
-    const tagsEl = document.getElementById('pTags');
-    tagsEl.innerHTML = `<span class="tag tag-${site.cat}">${site.cat}</span>
-      <span class="lang-tag">${site.lang}</span>`;
+    // toolbar
+    vbIcon.src = favicon(site.url);
+    vbName.textContent = site.name;
+    vbUrl.textContent  = site.url;
+    vbUrl.href         = site.url;
+    vbOpen.href        = site.url;
+    vbTags.innerHTML   = `<span class="vtag" ${catTagStyle(site.cat)}>${site.cat}</span>
+      <span style="font-size:9px;padding:2px 5px;border:1px solid var(--border);color:var(--text3)">${site.lang}</span>`;
+    vbFav.textContent  = favs.has(site.id) ? '★ Unfav' : '★ Fav';
+    viewerBar.classList.remove('hidden');
 
-    // fav button
-    const pFav = document.getElementById('pFav');
-    pFav.textContent = favs.has(site.id) ? '★ Unfav' : '★ Fav';
+    // show loading, hide others
+    welcome.style.display    = 'none';
+    blockedOv.classList.add('hidden');
+    loadOverlay.classList.remove('hidden');
+    loadText.textContent = `Loading ${site.name}…`;
 
-    // frame
-    showFrameMsg('loading');
+    // reset frame
     siteFrame.src = 'about:blank';
-    panel.classList.remove('hidden');
-    overlay.classList.remove('hidden');
-    document.body.classList.add('panel-open');
-
-    // delay a moment then attempt load
     clearTimeout(frameTimer);
+
+    // attempt load after short delay
     frameTimer = setTimeout(() => {
       siteFrame.src = site.url;
 
-      // detect block after 5s
+      // after 6s check if blocked (cross-origin access throws = page loaded; about:blank = blocked/errored)
       frameTimer = setTimeout(() => {
-        // check if iframe loaded
         try {
-          // if we can access contentWindow location it's same-origin (unlikely)
           const loc = siteFrame.contentWindow.location.href;
-          if (loc === 'about:blank' || loc === '') showFrameBlocked(site);
-        } catch (e) {
-          // cross-origin — assume blocked
-          showFrameBlocked(site);
+          // if we get here without throwing, it's same-origin — hide loader
+          if (!loc || loc === 'about:blank') {
+            showBlocked(site);
+          } else {
+            loadOverlay.classList.add('hidden');
+          }
+        } catch {
+          // cross-origin = page actually loaded (good!) — hide loader
+          loadOverlay.classList.add('hidden');
         }
-      }, 5000);
-    }, 200);
+      }, 6000);
+    }, 150);
+
+    render(); // update active highlight
   }
 
-  function showFrameMsg(type) {
-    frameMsg.classList.remove('hidden-msg');
-    if (type === 'loading') {
-      frameMsg.innerHTML = `<div class="spinner"></div><span id="frameMsgText">Attempting to embed site…</span>`;
-    }
-  }
-
-  function showFrameBlocked(site) {
-    frameMsg.classList.remove('hidden-msg');
-    frameMsg.innerHTML = `
-      <div class="frame-blocked">
-        <div class="block-icon">⚠</div>
-        <p>This site blocks embedding for security reasons.<br>
-        This is normal — most streaming sites use <code>X-Frame-Options</code> headers.</p>
-        <a href="${site.url}" target="_blank" rel="noopener">⊞ Open ${site.name} in New Tab →</a>
-      </div>`;
+  function showBlocked(site) {
+    loadOverlay.classList.add('hidden');
+    blockedOv.classList.remove('hidden');
+    blIcon.src = favicon(site.url);
+    blName.textContent = site.name;
+    blOpen.href = site.url;
+    blUrl.textContent = site.url;
     siteFrame.src = 'about:blank';
   }
 
-  function closePanel() {
+  function closeSite() {
     clearTimeout(frameTimer);
     siteFrame.src = 'about:blank';
-    panel.classList.add('hidden');
-    overlay.classList.add('hidden');
-    document.body.classList.remove('panel-open');
-    currentSite = null;
-  }
-
-  // ── Fav toggle ─────────────────────────────────
-  function toggleFav(id) {
-    id = parseInt(id);
-    if (favs.has(id)) favs.delete(id);
-    else favs.add(id);
-    localStorage.setItem('ah_favs', JSON.stringify([...favs]));
+    activeId = null;
+    viewerBar.classList.add('hidden');
+    welcome.style.display    = '';
+    loadOverlay.classList.add('hidden');
+    blockedOv.classList.add('hidden');
     render();
   }
 
-  // ── Event: grid clicks ─────────────────────────
-  grid.addEventListener('click', e => {
-    const favBtn = e.target.closest('[data-fav]');
-    if (favBtn) {
-      e.stopPropagation();
-      toggleFav(favBtn.dataset.fav);
-      return;
-    }
-    const card = e.target.closest('.card');
-    if (card) {
-      const site = SITES.find(s => s.id === parseInt(card.dataset.id));
-      if (site) openPanel(site);
-    }
-  });
+  // ── Welcome screen featured ────────────────────────
+  function buildFeatured() {
+    const sites = FEATURED_IDS.map(id => SITES.find(s => s.id === id)).filter(Boolean);
+    wcFeatured.innerHTML = sites.map(s => `
+<div class="wc-card" data-id="${s.id}">
+  <img src="${favicon(s.url)}" alt="" width="16" height="16" loading="lazy" onerror="this.style.visibility='hidden'">
+  ${s.name}
+</div>`).join('');
+    document.getElementById('wc-hint').textContent =
+      `${SITES.length} sites · search · filter by category · ★ save favourites`;
+  }
 
-  grid.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      const card = e.target.closest('.card');
-      if (card) {
-        const site = SITES.find(s => s.id === parseInt(card.dataset.id));
-        if (site) openPanel(site);
-      }
-    }
-  });
-
-  // ── Event: panel controls ──────────────────────
-  document.getElementById('pClose').addEventListener('click', closePanel);
-  overlay.addEventListener('click', closePanel);
-
-  document.getElementById('pFav').addEventListener('click', () => {
-    if (currentSite) {
-      toggleFav(currentSite.id);
-      document.getElementById('pFav').textContent = favs.has(currentSite.id) ? '★ Unfav' : '★ Fav';
-    }
-  });
-
-  // iframe load event — hide loading message if loaded successfully
+  // ── iframe events ──────────────────────────────────
   siteFrame.addEventListener('load', () => {
     clearTimeout(frameTimer);
+    const currentSite = SITES.find(s => s.id === activeId);
+    if (!currentSite) return;
     try {
       const loc = siteFrame.contentWindow.location.href;
-      if (!loc || loc === 'about:blank') { showFrameBlocked(currentSite); return; }
-      // loaded!
-      frameMsg.classList.add('hidden-msg');
+      if (!loc || loc === 'about:blank') {
+        showBlocked(currentSite);
+      } else {
+        loadOverlay.classList.add('hidden');
+      }
     } catch {
-      // cross-origin load — could be success or could be error page
-      // hide loading, show content (can't inspect cross-origin)
-      frameMsg.classList.add('hidden-msg');
+      // cross-origin load = success
+      loadOverlay.classList.add('hidden');
     }
   });
 
   siteFrame.addEventListener('error', () => {
-    if (currentSite) showFrameBlocked(currentSite);
+    const currentSite = SITES.find(s => s.id === activeId);
+    if (currentSite) showBlocked(currentSite);
   });
 
-  // ── Event: search ──────────────────────────────
+  // ── Event: site list clicks ────────────────────────
+  siteList.addEventListener('click', e => {
+    const favBtn = e.target.closest('[data-fav]');
+    if (favBtn) {
+      e.stopPropagation();
+      toggleFav(parseInt(favBtn.dataset.fav));
+      return;
+    }
+    const item = e.target.closest('.site-item');
+    if (item) {
+      const site = SITES.find(s => s.id === parseInt(item.dataset.id));
+      if (site) loadSite(site);
+    }
+  });
+
+  siteList.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const item = e.target.closest('.site-item');
+      if (item) {
+        const site = SITES.find(s => s.id === parseInt(item.dataset.id));
+        if (site) loadSite(site);
+      }
+    }
+  });
+
+  // ── Event: welcome card clicks ─────────────────────
+  wcFeatured.addEventListener('click', e => {
+    const card = e.target.closest('[data-id]');
+    if (card) {
+      const site = SITES.find(s => s.id === parseInt(card.dataset.id));
+      if (site) {
+        loadSite(site);
+        // scroll to item in list
+        const el = siteList.querySelector(`[data-id="${site.id}"]`);
+        if (el) el.scrollIntoView({ block: 'center' });
+      }
+    }
+  });
+
+  // ── Event: toolbar controls ────────────────────────
+  vbClose.addEventListener('click', closeSite);
+  vbRefresh.addEventListener('click', () => {
+    const site = SITES.find(s => s.id === activeId);
+    if (site) loadSite(site);
+  });
+  vbFav.addEventListener('click', () => {
+    if (activeId !== null) {
+      toggleFav(activeId);
+      vbFav.textContent = favs.has(activeId) ? '★ Unfav' : '★ Fav';
+    }
+  });
+
+  // ── Event: search ──────────────────────────────────
   searchInput.addEventListener('input', () => {
     searchQ = searchInput.value.trim();
     render();
   });
 
-  // ── Event: category filter ─────────────────────
-  document.querySelectorAll('.fbtn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeCat = btn.dataset.cat;
-      favOnly = false;
-      document.getElementById('favBtn').classList.remove('active');
-      render();
-    });
+  // ── Event: category filter ─────────────────────────
+  document.getElementById('catList').addEventListener('click', e => {
+    const btn = e.target.closest('.cat-btn');
+    if (!btn) return;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCat = btn.dataset.cat;
+    favOnly = false;
+    document.getElementById('favFilterBtn').classList.remove('active');
+    render();
   });
 
-  // ── Event: language filter ────────────────────
+  // ── Event: language filter ─────────────────────────
   document.querySelectorAll('.lbtn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.lbtn').forEach(b => b.classList.remove('active'));
@@ -266,45 +303,70 @@
     });
   });
 
-  // ── Event: sort ───────────────────────────────
+  // ── Event: sort ────────────────────────────────────
   document.getElementById('sortSel').addEventListener('change', e => {
     sortBy = e.target.value;
     render();
   });
 
-  // ── Event: view toggle ────────────────────────
-  document.getElementById('gridBtn').addEventListener('click', () => {
-    listMode = false;
-    grid.classList.remove('list-mode');
-    document.getElementById('gridBtn').classList.add('active');
-    document.getElementById('listBtn').classList.remove('active');
-  });
-
-  document.getElementById('listBtn').addEventListener('click', () => {
-    listMode = true;
-    grid.classList.add('list-mode');
-    document.getElementById('listBtn').classList.add('active');
-    document.getElementById('gridBtn').classList.remove('active');
-  });
-
-  // ── Event: favourites button ──────────────────
-  document.getElementById('favBtn').addEventListener('click', () => {
+  // ── Event: favourites toggle ───────────────────────
+  document.getElementById('favFilterBtn').addEventListener('click', () => {
     favOnly = !favOnly;
-    document.getElementById('favBtn').classList.toggle('active', favOnly);
+    document.getElementById('favFilterBtn').classList.toggle('active', favOnly);
     if (favOnly) {
       activeCat = 'all';
-      document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
-      document.querySelector('.fbtn[data-cat="all"]').classList.add('active');
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.cat-btn[data-cat="all"]').classList.add('active');
     }
     render();
   });
 
-  // ── Keyboard: Escape closes panel ─────────────
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !panel.classList.contains('hidden')) closePanel();
+  // ── Event: sidebar toggle ──────────────────────────
+  document.getElementById('sbToggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
   });
 
-  // ── Init ──────────────────────────────────────
-  totalCount.textContent = SITES.length;
+  // ── Escape closes site ─────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && activeId !== null) closeSite();
+  });
+
+  // ── Fav toggle ─────────────────────────────────────
+  function toggleFav(id) {
+    if (favs.has(id)) favs.delete(id);
+    else favs.add(id);
+    localStorage.setItem('ah_favs', JSON.stringify([...favs]));
+    render();
+  }
+
+  // ── Resize handle drag ─────────────────────────────
+  let isResizing = false;
+
+  resizeHandle.addEventListener('mousedown', e => {
+    isResizing = true;
+    resizeHandle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    // prevent iframe from stealing mouse events
+    siteFrame.style.pointerEvents = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!isResizing) return;
+    const newW = Math.max(160, Math.min(520, e.clientX));
+    sidebar.style.width = newW + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isResizing) return;
+    isResizing = false;
+    resizeHandle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    siteFrame.style.pointerEvents = '';
+  });
+
+  // ── Init ───────────────────────────────────────────
+  buildFeatured();
   render();
 })();
