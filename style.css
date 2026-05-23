@@ -402,31 +402,61 @@ html, body {
 @keyframes spin { to { transform: rotate(360deg); } }
 .ov-text { font-size: 12px; color: var(--text2); }
 
-.bl-icon { width: 48px; height: 48px; object-fit: contain; opacity: .8; }
-.bl-name { font-size: 18px; font-weight: bold; color: var(--text); }
-.bl-badge {
-  font-size: 10px;
-  letter-spacing: 2px;
-  padding: 4px 10px;
-  border: 1px solid var(--orange);
-  color: var(--orange);
-  background: rgba(255,119,0,.08);
+/* launch pad */
+.lp-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
 }
-.bl-msg { font-size: 12px; color: var(--text2); line-height: 1.7; max-width: 420px; }
-.bl-msg code { color: var(--cyan); font-family: var(--font); }
-.bl-btn {
+.lp-icon {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: var(--bg3);
+  padding: 6px;
+}
+.lp-name {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+.lp-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  max-width: 400px;
+}
+.lp-btn {
   display: inline-block;
-  padding: 10px 28px;
+  padding: 14px 40px;
   border: 1px solid var(--cyan);
   color: var(--cyan);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
   font-family: var(--font);
+  font-weight: bold;
   background: rgba(0,212,255,.1);
+  letter-spacing: 1px;
   transition: all .15s;
+  margin-top: 4px;
 }
-.bl-btn:hover { background: rgba(0,212,255,.25); box-shadow: 0 0 14px rgba(0,212,255,.2); }
-.bl-url { font-size: 10px; color: var(--text3); }
+.lp-btn:hover {
+  background: rgba(0,212,255,.22);
+  box-shadow: 0 0 20px rgba(0,212,255,.25);
+  transform: translateY(-1px);
+}
+.lp-note {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+.lp-note code { color: var(--text3); font-family: var(--font); }
 
 /* ── WELCOME SCREEN ──────────────────────────────────── */
 .welcome {

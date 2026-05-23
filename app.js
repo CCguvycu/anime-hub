@@ -5,8 +5,9 @@
   let searchQ     = '';
   let sortBy      = 'name';
   let favOnly     = false;
-  let activeId    = null;
-  let frameTimer  = null;
+  let activeId     = null;
+  let frameTimer   = null;
+  let pendingLoad  = false; // true only while a real URL (not about:blank) is in flight
   let favs = new Set(JSON.parse(localStorage.getItem('ah_favs') || '[]'));
 
   const FEATURED_IDS = [1, 38, 30, 140, 220, 270, 97, 106, 300, 577];
@@ -33,8 +34,8 @@
   const blockedOv    = document.getElementById('blockedOv');
   const blIcon       = document.getElementById('blIcon');
   const blName       = document.getElementById('blName');
+  const blDesc       = document.getElementById('blDesc');
   const blOpen       = document.getElementById('blOpen');
-  const blUrl        = document.getElementById('blUrl');
   const favCount     = document.getElementById('favCount');
   const wcFeatured   = document.getElementById('wcFeatured');
   const resizeHandle = document.getElementById('resizeHandle');
@@ -137,46 +138,46 @@
     loadOverlay.classList.remove('hidden');
     loadText.textContent = `Loading ${site.name}…`;
 
-    // reset frame
+    // reset frame — pendingLoad stays false so the about:blank load event is ignored
+    pendingLoad = false;
     siteFrame.src = 'about:blank';
     clearTimeout(frameTimer);
 
-    // attempt load after short delay
+    // short delay lets the about:blank load event fire and clear, then we start the real load
     frameTimer = setTimeout(() => {
+      pendingLoad = true;
       siteFrame.src = site.url;
 
-      // after 6s: user may have switched sites — bail if activeId has changed
+      // 2.5s safety net for sites that never fire a load event (network timeout, etc.)
       frameTimer = setTimeout(() => {
-        if (activeId !== site.id) return;
+        if (activeId !== site.id || !pendingLoad) return;
+        pendingLoad = false;
         try {
           const loc = siteFrame.contentWindow.location.href;
-          if (!loc || loc === 'about:blank') {
-            showBlocked(site);
-          } else {
-            loadOverlay.classList.add('hidden');
-          }
+          if (!loc || loc === 'about:blank') showBlocked(site);
+          else loadOverlay.classList.add('hidden');
         } catch {
-          // cross-origin = page actually loaded
           loadOverlay.classList.add('hidden');
         }
-      }, 6000);
+      }, 2500);
     }, 150);
 
     render(); // update active highlight
   }
 
   function showBlocked(site) {
+    pendingLoad = false;
     loadOverlay.classList.add('hidden');
     blockedOv.classList.remove('hidden');
-    blIcon.src = favicon(site.url);
+    blIcon.src  = favicon(site.url);
     blName.textContent = site.name;
+    blDesc.textContent = site.desc;
     blOpen.href = site.url;
-    blUrl.textContent = site.url;
-    siteFrame.src = 'about:blank';
   }
 
   function closeSite() {
     clearTimeout(frameTimer);
+    pendingLoad = false;
     siteFrame.src = 'about:blank';
     activeId = null;
     viewerBar.classList.add('hidden');
@@ -198,24 +199,28 @@
       `${SITES.length} sites · search · filter by category · ★ save favourites`;
   }
 
-  // ── iframe events ──────────────────────────────────
+  // ── iframe load event ──────────────────────────────
   siteFrame.addEventListener('load', () => {
-    // about:blank fires whenever we reset the frame internally — ignore those
-    // to avoid cancelling the setup timer and falsely triggering showBlocked
-    try {
-      if (siteFrame.contentWindow.location.href === 'about:blank') return;
-    } catch { /* cross-origin: real page loaded — fall through */ }
-
+    // pendingLoad is only true while a real URL is in flight.
+    // about:blank resets (internal) fire load too — pendingLoad is false then, so we skip them.
+    if (!pendingLoad) return;
+    pendingLoad = false;
     clearTimeout(frameTimer);
+
     const currentSite = SITES.find(s => s.id === activeId);
     if (!currentSite) return;
 
     try {
       const loc = siteFrame.contentWindow.location.href;
-      // same-origin, non-blank → loaded successfully
-      if (loc && loc !== 'about:blank') loadOverlay.classList.add('hidden');
+      // about:blank means X-Frame-Options blocked the page (Chrome lands here after a block)
+      if (!loc || loc === 'about:blank') {
+        showBlocked(currentSite);
+      } else {
+        // same-origin, non-blank — loaded fine
+        loadOverlay.classList.add('hidden');
+      }
     } catch {
-      // cross-origin SecurityError = page loaded fine
+      // SecurityError = cross-origin page loaded successfully
       loadOverlay.classList.add('hidden');
     }
   });

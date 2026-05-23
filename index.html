@@ -114,14 +114,15 @@
         <div class="ov-text" id="loadText">Loading…</div>
       </div>
 
-      <!-- blocked -->
+      <!-- blocked / launch pad -->
       <div id="blockedOv" class="frame-ov hidden">
-        <img id="blIcon" class="bl-icon" src="" alt="">
-        <div id="blName" class="bl-name"></div>
-        <div class="bl-badge">⚠ EMBEDDING BLOCKED</div>
-        <p class="bl-msg">This site uses <code>X-Frame-Options</code> headers to prevent embedding in iframes.<br>This is standard browser security — not an AnimeHub issue.</p>
-        <a id="blOpen" class="bl-btn" href="#" target="_blank" rel="noopener noreferrer">⊞ Open in New Tab →</a>
-        <div id="blUrl" class="bl-url"></div>
+        <div class="lp-wrap">
+          <img id="blIcon" class="lp-icon" src="" alt="">
+          <div id="blName" class="lp-name"></div>
+          <div id="blDesc" class="lp-desc"></div>
+          <a id="blOpen" class="lp-btn" href="#" target="_blank" rel="noopener noreferrer">⊞ Open Site in New Tab</a>
+          <div class="lp-note">Can't embed — this site uses <code>X-Frame-Options</code></div>
+        </div>
       </div>
 
       <iframe id="siteFrame" class="site-frame" src="about:blank"
