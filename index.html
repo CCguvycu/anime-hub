@@ -15,7 +15,7 @@
   </div>
   <div class="hdr-search">
     <span class="hdr-search-ico">◈</span>
-    <input id="searchInput" type="text" placeholder="Search sites…" autocomplete="off">
+    <input id="searchInput" type="text" placeholder="Filter sites…" autocomplete="off">
   </div>
   <div class="hdr-right">
     <span id="countBadge" class="hdr-count"></span>
@@ -25,9 +25,8 @@
 
 <div class="workspace">
 
-  <!-- ── LEFT: browser sidebar ───────────────────── -->
+  <!-- ── LEFT: site directory ───────────────── -->
   <aside id="sidebar" class="sidebar">
-
     <div class="sb-top">
       <div class="sb-label">◇ CATEGORY</div>
       <div class="cat-list" id="catList">
@@ -46,7 +45,6 @@
         <button class="cat-btn" data-cat="music">Music</button>
         <button class="cat-btn" data-cat="store">Store</button>
       </div>
-
       <div class="sb-label" style="margin-top:8px">◇ LANGUAGE</div>
       <div class="lang-row">
         <button class="lbtn active" data-lang="all">ALL</button>
@@ -58,7 +56,6 @@
         <button class="lbtn" data-lang="PT">PT</button>
         <button class="lbtn" data-lang="RU">RU</button>
       </div>
-
       <div class="sb-tools">
         <button id="favFilterBtn" class="tool-btn">★ Favs <span id="favCount">0</span></button>
         <select id="sortSel" class="sort-sel">
@@ -68,70 +65,90 @@
         </select>
       </div>
     </div>
-
-    <div class="sb-list-hdr">
-      <span id="listCount" class="list-count"></span>
-    </div>
-
+    <div class="sb-list-hdr"><span id="listCount" class="list-count"></span></div>
     <div id="siteList" class="sb-list"></div>
-
   </aside>
 
-  <div id="resizeHandle" class="resize-handle" title="Drag to resize"></div>
+  <div id="resizeHandle" class="resize-handle"></div>
 
-  <!-- ── RIGHT: viewer ───────────────────────────── -->
+  <!-- ── RIGHT: viewer ─────────────────────── -->
   <div id="viewer" class="viewer">
 
-    <div id="viewerBar" class="viewer-bar hidden">
-      <img id="vbIcon" class="vb-icon" src="" alt="">
-      <div class="vb-meta">
-        <span id="vbName" class="vb-name"></span>
-        <a id="vbUrl" class="vb-url" href="#" target="_blank" rel="noopener noreferrer"></a>
-      </div>
-      <div class="vb-tags" id="vbTags"></div>
-      <div class="vb-actions">
-        <button id="vbRefresh" class="vb-btn" title="Reload">⟳ Reload</button>
-        <a id="vbOpen" class="vb-btn vb-open" href="#" target="_blank" rel="noopener noreferrer">⊞ New Tab</a>
-        <button id="vbFav" class="vb-btn">★ Fav</button>
-        <button id="vbClose" class="vb-btn vb-x" title="Close">✕</button>
-      </div>
-    </div>
-
-    <div id="frameWrap" class="frame-wrap">
-
-      <!-- welcome -->
-      <div id="welcome" class="welcome">
+    <!-- VIEW: Welcome + Anime Search -->
+    <div id="viewWelcome" class="view-panel active">
+      <div class="wc-inner">
         <div class="wc-glyph">⟐</div>
         <div class="wc-title">ANIMEHUB</div>
-        <div class="wc-sub">Select a site from the left panel — it loads here</div>
-        <div class="wc-hint" id="wc-hint"></div>
+        <div class="wc-sub">Search for anime or click a site in the left panel</div>
+        <div class="wc-search-wrap">
+          <input id="animeSearch" type="text" placeholder="Search anime to watch…" autocomplete="off">
+          <button id="animeSearchBtn" class="search-btn">▸ Search</button>
+        </div>
         <div class="wc-featured" id="wcFeatured"></div>
       </div>
-
-      <!-- loading -->
-      <div id="loadOverlay" class="frame-ov hidden">
-        <div class="spinner"></div>
-        <div class="ov-text" id="loadText">Loading…</div>
-      </div>
-
-      <!-- blocked / launch pad -->
-      <div id="blockedOv" class="frame-ov hidden">
-        <div class="lp-wrap">
-          <img id="blIcon" class="lp-icon" src="" alt="">
-          <div id="blName" class="lp-name"></div>
-          <div id="blDesc" class="lp-desc"></div>
-          <a id="blOpen" class="lp-btn" href="#" target="_blank" rel="noopener noreferrer">⊞ Open Site in New Tab</a>
-          <div class="lp-note">Can't embed — this site uses <code>X-Frame-Options</code></div>
-        </div>
-      </div>
-
-      <iframe id="siteFrame" class="site-frame" src="about:blank"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation">
-      </iframe>
-
     </div>
-  </div>
 
+    <!-- VIEW: Search Results -->
+    <div id="viewResults" class="view-panel hidden">
+      <div class="vr-head">
+        <button id="vrBack" class="back-btn">← Back</button>
+        <span id="vrQuery" class="vr-query"></span>
+        <span id="vrCount" class="vr-count"></span>
+      </div>
+      <div id="vrGrid" class="vr-grid"></div>
+    </div>
+
+    <!-- VIEW: Player -->
+    <div id="viewPlayer" class="view-panel hidden">
+      <div class="pl-layout">
+
+        <div class="pl-main">
+          <div class="pl-src-bar">
+            <span class="src-label">◇ SOURCE</span>
+            <div id="srcBtnRow" class="src-btns"></div>
+            <button id="backToSearch" class="back-btn" style="margin-left:auto">← Back</button>
+          </div>
+          <div id="playerBox" class="player-box">
+            <iframe id="playerFrame" allowfullscreen
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+              src="about:blank"></iframe>
+          </div>
+          <div class="pl-ctrl">
+            <div id="playerTitle" class="pl-title"></div>
+            <div class="pl-nav">
+              <button id="prevEpBtn" class="pvb" disabled>← Prev</button>
+              <button id="nextEpBtn" class="pvb" disabled>Next →</button>
+              <button id="retryBtn" class="pvb">↺ Retry</button>
+              <button id="fsBtn" class="pvb">⛶ Full</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pl-ep-sidebar">
+          <div class="ep-head">
+            <span>Episodes</span>
+            <span id="epTotal" class="ep-total"></span>
+          </div>
+          <div id="epList" class="ep-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW: Site info / launch pad -->
+    <div id="viewSite" class="view-panel hidden">
+      <div class="site-lp">
+        <button id="siteLpBack" class="back-btn" style="margin-bottom:10px">← Back</button>
+        <img id="lpIcon" class="lp-icon" src="" alt="">
+        <div id="lpName" class="lp-name"></div>
+        <div id="lpCat" class="lp-cat"></div>
+        <div id="lpDesc" class="lp-desc"></div>
+        <a id="lpOpen" class="lp-btn" href="#" target="_blank" rel="noopener noreferrer">⊞ Open Site in New Tab</a>
+        <div class="lp-note">Site can't be embedded · <code>X-Frame-Options</code></div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script src="sites.js"></script>
