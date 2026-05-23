@@ -265,7 +265,6 @@ html, body {
   border: none;
   cursor: pointer;
   padding: 0 2px;
-  transition: color .12s;
   flex-shrink: 0;
   opacity: 0;
   transition: opacity .1s, color .1s;

@@ -17,7 +17,6 @@
   const listCount    = document.getElementById('listCount');
   const countBadge   = document.getElementById('countBadge');
   const searchInput  = document.getElementById('searchInput');
-  const viewer       = document.getElementById('viewer');
   const viewerBar    = document.getElementById('viewerBar');
   const vbIcon       = document.getElementById('vbIcon');
   const vbName       = document.getElementById('vbName');
@@ -27,7 +26,6 @@
   const vbOpen       = document.getElementById('vbOpen');
   const vbClose      = document.getElementById('vbClose');
   const vbRefresh    = document.getElementById('vbRefresh');
-  const frameWrap    = document.getElementById('frameWrap');
   const siteFrame    = document.getElementById('siteFrame');
   const welcome      = document.getElementById('welcome');
   const loadOverlay  = document.getElementById('loadOverlay');
@@ -147,18 +145,18 @@
     frameTimer = setTimeout(() => {
       siteFrame.src = site.url;
 
-      // after 6s check if blocked (cross-origin access throws = page loaded; about:blank = blocked/errored)
+      // after 6s: user may have switched sites — bail if activeId has changed
       frameTimer = setTimeout(() => {
+        if (activeId !== site.id) return;
         try {
           const loc = siteFrame.contentWindow.location.href;
-          // if we get here without throwing, it's same-origin — hide loader
           if (!loc || loc === 'about:blank') {
             showBlocked(site);
           } else {
             loadOverlay.classList.add('hidden');
           }
         } catch {
-          // cross-origin = page actually loaded (good!) — hide loader
+          // cross-origin = page actually loaded
           loadOverlay.classList.add('hidden');
         }
       }, 6000);
@@ -202,18 +200,22 @@
 
   // ── iframe events ──────────────────────────────────
   siteFrame.addEventListener('load', () => {
+    // about:blank fires whenever we reset the frame internally — ignore those
+    // to avoid cancelling the setup timer and falsely triggering showBlocked
+    try {
+      if (siteFrame.contentWindow.location.href === 'about:blank') return;
+    } catch { /* cross-origin: real page loaded — fall through */ }
+
     clearTimeout(frameTimer);
     const currentSite = SITES.find(s => s.id === activeId);
     if (!currentSite) return;
+
     try {
       const loc = siteFrame.contentWindow.location.href;
-      if (!loc || loc === 'about:blank') {
-        showBlocked(currentSite);
-      } else {
-        loadOverlay.classList.add('hidden');
-      }
+      // same-origin, non-blank → loaded successfully
+      if (loc && loc !== 'about:blank') loadOverlay.classList.add('hidden');
     } catch {
-      // cross-origin load = success
+      // cross-origin SecurityError = page loaded fine
       loadOverlay.classList.add('hidden');
     }
   });
@@ -353,6 +355,7 @@
 
   document.addEventListener('mousemove', e => {
     if (!isResizing) return;
+    sidebar.classList.remove('collapsed'); // !important override removed so inline width takes effect
     const newW = Math.max(160, Math.min(520, e.clientX));
     sidebar.style.width = newW + 'px';
   });
